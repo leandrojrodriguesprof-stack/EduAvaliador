@@ -1,0 +1,8 @@
+{
+  "name": "GabaritoPro - Provas Online & Correção IA",
+  "description": "Plataforma completa para criação, aplicação e correção de provas objetivas e dissertativas com correção inteligente e relatórios pedagógicos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
