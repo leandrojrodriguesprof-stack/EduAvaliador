@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '100mb' }));
 
 // Helper to get Gemini client
 function getGeminiClient(): GoogleGenAI {
@@ -557,11 +557,22 @@ Avalie com rigor oficial as 5 competências do ENEM, notas de 0 a 200 (em interv
 
     const parsed = JSON.parse(response.text || '{}');
     return res.json(parsed);
-  } catch (error: any) {
-    console.error('Erro na correção ENEM via Gemini, usando gerador heurístico:', error.message);
-    const { essayText = '', theme } = req.body;
-    const words = essayText.split(/\s+/).filter(Boolean);
+  } 
+} catch (error: any) {
+  console.error('[CORRECAO_ENEM] Falha:', {
+    message: error?.message || 'Erro desconhecido',
+    status: error?.status,
+    code: error?.code,
+  });
 
+  return res.status(502).json({
+    error: 'Não foi possível concluir a correção.',
+    code: 'ESSAY_GRADING_FAILED',
+    retryable: true,
+    message:
+      'A correção não foi concluída. Verifique a imagem e tente novamente. Nenhuma nota foi gerada.',
+  });
+}
     // Heuristic ENEM scoring
     const c1 = words.length > 150 ? 160 : 120;
     const c2 = words.length > 200 ? 160 : 120;
