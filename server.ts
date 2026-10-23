@@ -10,7 +10,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
+const DEFAULT_MODEL = 'gemini-3.1-flash-lite';
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -89,7 +90,7 @@ INSTRUÇÕES DE CORREÇÃO:
 4. Forneça feedbacks claros, construtivos e respeitosos em língua portuguesa, ressaltando pontos fortes e pontos a aprimorar.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: DEFAULT_MODEL,
       contents: prompt,
       config: {
         systemInstruction: 'Você é um corretor de provas e redações educacionais justo, técnico e didático. Responda em português brasileiro.',
@@ -264,7 +265,7 @@ REQUISITOS PEDAGÓGICOS E BNCC:
    - Forneça 3 ou 4 instruções aos alunos (ex: tempo estimado, uso de caneta, leitura atenta).`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: DEFAULT_MODEL,
       contents: prompt,
       config: {
         systemInstruction: 'Você é um elaborador sênior de bancas de exames educacionais, vestibulares e BNCC. Responda em português brasileiro com JSON estruturado rigoroso.',
@@ -487,7 +488,7 @@ Avalie com rigor oficial as 5 competências do ENEM, notas de 0 a 200 (em interv
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: DEFAULT_MODEL,
       contents,
       config: {
         systemInstruction,
@@ -679,7 +680,7 @@ QUESTÕES DA AVALIAÇÃO:
 ${questionsListPrompt}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: DEFAULT_MODEL,
       contents: {
         parts: [
           {
@@ -770,7 +771,7 @@ MISSÃO TÉCNICA E PEDAGÓGICA:
    - Avalie a legibilidade geral da imagem (boa, mediana, baixa/ilegível).`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: DEFAULT_MODEL,
       contents: {
         parts: [
           {
@@ -857,7 +858,7 @@ QUESTÃO ANTERIOR (substitua por uma formulação inédita e enriquecida):
 "${previousQuestion.statement}"`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: DEFAULT_MODEL,
       contents: prompt,
       config: {
         systemInstruction: 'Você é um elaborador de questões educacionais para bancas oficiais e BNCC. Responda em JSON.',
@@ -968,7 +969,7 @@ REQUISITOS PEDAGÓGICOS:
 4. Título elegante e instruções didáticas.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: DEFAULT_MODEL,
       contents: prompt,
       config: {
         systemInstruction: 'Você é um especialista em currículo e avaliação educacional alinhada à BNCC do Ministério da Educação do Brasil. Responda em JSON estruturado.',
@@ -1085,7 +1086,7 @@ ENUNCIADO:
 "${statement}"`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: DEFAULT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -1165,7 +1166,7 @@ DIRETRIZES:
 4. Inclua uma sugestão pedagógica de como o professor pode explorar o texto na elaboração da questão.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: DEFAULT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -1260,7 +1261,7 @@ ${JSON.stringify(
 )}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: DEFAULT_MODEL,
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
