@@ -18,6 +18,7 @@ export type ActiveTab =
   | 'taker'
   | 'results'
   | 'enem_essays'
+  | 'essay_batch'
   | 'photo_batch'
   | 'bncc_dashboard';
 
@@ -26,6 +27,7 @@ interface HeaderProps {
   setActiveTab: (tab: ActiveTab) => void;
   pendingCount: number;
   onOpenAiModal: () => void;
+  onOpenBnccModal: () => void;
   onNewExam: () => void;
   onResetData: () => void;
 }
@@ -35,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveTab,
   pendingCount,
   onOpenAiModal,
+  onOpenBnccModal,
   onNewExam,
   onResetData,
 }) => {
@@ -129,7 +132,19 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <PenTool className="w-3.5 h-3.5 text-amber-300" />
-              Redações ENEM (MEC)
+              Redações ENEM
+            </button>
+
+            <button
+              onClick={() => setActiveTab('essay_batch')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'essay_batch'
+                  ? 'bg-indigo-700 text-white shadow-xs font-bold'
+                  : 'text-indigo-800 hover:text-indigo-950 font-semibold'
+              }`}
+            >
+              <Camera className="w-3.5 h-3.5 text-amber-300" />
+              Redações em Lote
             </button>
 
             <button
@@ -147,6 +162,15 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={onOpenBnccModal}
+              title="Abrir Catálogo de Habilidades e Auditoria da BNCC"
+              className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+              Catálogo BNCC
+            </button>
+
             <button
               onClick={onResetData}
               title="Zerar todos os dados da plataforma"
@@ -201,7 +225,7 @@ export const Header: React.FC<HeaderProps> = ({
               activeTab === 'photo_batch' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600'
             }`}
           >
-            Foto/Lote
+            Foto Gabarito
           </button>
           <button
             onClick={() => setActiveTab('enem_essays')}
@@ -212,12 +236,26 @@ export const Header: React.FC<HeaderProps> = ({
             Redações ENEM
           </button>
           <button
+            onClick={() => setActiveTab('essay_batch')}
+            className={`py-1.5 px-2.5 rounded-lg text-xs font-bold whitespace-nowrap ${
+              activeTab === 'essay_batch' ? 'bg-indigo-600 text-white' : 'text-indigo-800'
+            }`}
+          >
+            Lote Redações
+          </button>
+          <button
             onClick={() => setActiveTab('bncc_dashboard')}
             className={`py-1.5 px-2.5 rounded-lg text-xs font-semibold whitespace-nowrap ${
               activeTab === 'bncc_dashboard' ? 'bg-blue-50 text-blue-700' : 'text-slate-600'
             }`}
           >
             Dashboard BNCC
+          </button>
+          <button
+            onClick={onOpenBnccModal}
+            className="py-1.5 px-2.5 rounded-lg text-xs font-semibold whitespace-nowrap text-purple-700 bg-purple-50"
+          >
+            Catálogo BNCC
           </button>
         </div>
       </div>

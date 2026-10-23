@@ -34,6 +34,7 @@ import {
   generateRubricForStatement,
   generateSupportingText,
   adaptExamForInclusion,
+  regenerateExamQuestion,
 } from '../services/geminiService';
 import {
   BNCC_CURRICULUM,
@@ -472,6 +473,38 @@ export const ExamEditor: React.FC<ExamEditorProps> = ({
       alert('Não foi possível gerar a rubrica com IA: ' + err.message);
     } finally {
       setGeneratingRubricId(null);
+    }
+  };
+
+  // Single Question AI Regeneration (preserving points, BNCC and type)
+  const [regeneratingQuestionId, setRegeneratingQuestionId] = useState<string | null>(null);
+
+  const handleRegenerateQuestion = async (q: Question) => {
+    setRegeneratingQuestionId(q.id);
+    try {
+      const regenerated = await regenerateExamQuestion({
+        previousQuestion: q,
+        subject: subject || 'Geral',
+        gradeLevel: gradeLevel || 'Ensino Fundamental / Médio',
+        difficulty: 'médio',
+        topic: q.subjectTag || subject,
+      });
+
+      handleUpdateQuestion(q.id, {
+        statement: regenerated.statement,
+        options: regenerated.options,
+        expectedAnswer: regenerated.expectedAnswer,
+        rubric: regenerated.rubric,
+        bnccCode: regenerated.bnccCode || q.bnccCode,
+        bnccSkillDescription: regenerated.bnccSkillDescription || q.bnccSkillDescription,
+        bnccAlignmentStatus: 'confirmada',
+        bnccPedagogicalRationale: 'Regenerada pontualmente com parâmetros de matriz preservados.',
+      });
+    } catch (err: any) {
+      console.error(err);
+      alert('Não foi possível regenerar a questão: ' + err.message);
+    } finally {
+      setRegeneratingQuestionId(null);
     }
   };
 
@@ -1238,6 +1271,16 @@ export const ExamEditor: React.FC<ExamEditorProps> = ({
                   <div className="flex items-center border-l border-slate-200 pl-3 gap-1">
                     <button
                       type="button"
+                      disabled={regeneratingQuestionId === q.id}
+                      onClick={() => handleRegenerateQuestion(q)}
+                      className="px-2.5 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors flex items-center gap-1.5 shadow-2xs"
+                      title="Regenerar apenas esta questão com IA preservando parâmetros"
+                    >
+                      <Sparkles className={`w-3.5 h-3.5 ${regeneratingQuestionId === q.id ? 'animate-spin' : ''}`} />
+                      <span>{regeneratingQuestionId === q.id ? 'Regenerando...' : 'Regenerar Questão'}</span>
+                    </button>
+                    <button
+                      type="button"
                       disabled={qIndex === 0}
                       onClick={() => handleMoveQuestion(qIndex, 'up')}
                       className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 rounded"
@@ -1266,10 +1309,10 @@ export const ExamEditor: React.FC<ExamEditorProps> = ({
                 </div>
               </div>
 
-              {/* BNCC Skill Description Badge if linked */}
+              {/* BNCC Skill Description & Alignment Status Badge */}
               {q.bnccCode && (
-                <div className="px-5 py-2 bg-indigo-50/50 border-b border-indigo-100 flex items-center justify-between text-xs text-indigo-900 gap-2">
-                  <div className="flex items-center gap-2 overflow-hidden text-ellipsis">
+                <div className="px-5 py-2 bg-indigo-50/50 border-b border-indigo-100 flex flex-wrap items-center justify-between text-xs text-indigo-900 gap-2">
+                  <div className="flex items-center gap-2 overflow-hidden text-ellipsis flex-1 min-w-[200px]">
                     <span className="font-bold text-indigo-800 shrink-0 font-mono">
                       {q.bnccCode}
                     </span>
@@ -1277,9 +1320,27 @@ export const ExamEditor: React.FC<ExamEditorProps> = ({
                       {q.bnccSkillDescription || q.subjectTag || 'Habilidade curricular vinculada'}
                     </span>
                   </div>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full shrink-0">
-                    Alimenta Dashboard
-                  </span>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] text-slate-500 font-medium">Alinhamento:</span>
+                    <select
+                      value={q.bnccAlignmentStatus || 'confirmada'}
+                      onChange={(e) =>
+                        handleUpdateQuestion(q.id, {
+                          bnccAlignmentStatus: e.target.value as any,
+                        })
+                      }
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-md border border-indigo-200 bg-white text-indigo-800 outline-none"
+                    >
+                      <option value="confirmada">Confirmada</option>
+                      <option value="revisada">Revisada pelo Docente</option>
+                      <option value="sugerida">Sugerida por IA</option>
+                    </select>
+
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                      Alimenta Dashboard
+                    </span>
+                  </div>
                 </div>
               )}
 

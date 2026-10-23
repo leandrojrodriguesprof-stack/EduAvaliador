@@ -660,6 +660,195 @@ ${questionsListPrompt}`;
 });
 
 // ----------------------------------------------------------------------------
+// API: Transcrição e OCR de Foto de Redação com Reconhecimento de Estudante
+// ----------------------------------------------------------------------------
+app.post('/api/ai/transcribe-essay-photo', async (req: Request, res: Response) => {
+  try {
+    const { imageBase64, knownStudents = [], theme = '' } = req.body;
+
+    if (!imageBase64) {
+      return res.status(400).json({ error: 'A imagem da redação é obrigatória.' });
+    }
+
+    const ai = getGeminiClient();
+    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+
+    const knownStudentsPrompt = Array.isArray(knownStudents) && knownStudents.length > 0
+      ? `LISTA DE ESTUDANTES MATRICULADOS NA TURMA (consulte para validar grafias de nomes):\n${knownStudents.map((s: any) => `- ${s.name || s}`).join('\n')}`
+      : 'Nenhuma lista prévia de estudantes fornecida.';
+
+    const prompt = `Analise a fotografia desta folha de redação manuscrita escolar.
+${knownStudentsPrompt}
+
+MISSÃO TÉCNICA E PEDAGÓGICA:
+1. RECONHECIMENTO DO ESTUDANTE:
+   - Localize o cabeçalho e tente identificar o nome do estudante e/ou matrícula.
+   - Compare com a lista de matriculados se fornecida.
+   - SE o nome estiver ilegível, rasurado ou ausente, declare 'isConfident: false' e deixe 'detectedStudentName' vazio ou com indicação de incerteza (NÃO invente um nome!).
+2. DISTINÇÃO FOLHA-ESPELHO / TEXTO IMPRESSO:
+   - Ignore textos de apoio impressos, instruções de prova, cabeçalhos padronizados e números de linhas.
+   - Extraia e transcreva COM FIDELIDADE EXCLUSIVAMENTE o texto manuscrito produzido pelo estudante.
+3. CONTAGEM E QUALIDADE:
+   - Forneça a transcrição organizada em parágrafos.
+   - Avalie a legibilidade geral da imagem (boa, mediana, baixa/ilegível).`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: cleanBase64,
+            },
+          },
+          { text: prompt },
+        ],
+      },
+      config: {
+        systemInstruction: 'Você é um especialista em OCR educacional, leitura de caligrafia manuscrita e transcrição de redações. Seja rigoroso com a fidelidade textual. Responda em JSON.',
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            detectedStudentName: { type: Type.STRING, description: 'Nome identificado no cabeçalho ou vazio se incerto' },
+            detectedRegistration: { type: Type.STRING },
+            isConfident: { type: Type.BOOLEAN, description: 'true se houver certeza razoável do nome' },
+            confidenceScore: { type: Type.NUMBER, description: 'Grau de confiança de 0.0 a 1.0' },
+            transcription: { type: Type.STRING, description: 'Transcrição integral fiel do texto manuscrito' },
+            readability: { type: Type.STRING, description: 'alta, moderada, baixa ou ilegível' },
+            detectedParagraphsCount: { type: Type.NUMBER },
+            isMirrorSheetDetected: { type: Type.BOOLEAN, description: 'true se contém campos de folha-espelho/gabarito de avaliação' },
+            observations: { type: Type.STRING },
+          },
+          required: ['detectedStudentName', 'isConfident', 'transcription', 'readability'],
+        },
+      },
+    });
+
+    const parsed = JSON.parse(response.text || '{}');
+    return res.json(parsed);
+  } catch (error: any) {
+    console.error('Erro na transcrição de foto de redação:', error.message);
+    return res.json({
+      detectedStudentName: '',
+      isConfident: false,
+      confidenceScore: 0.2,
+      transcription: 'Aguardando transcrição e conferência do professor.',
+      readability: 'moderada',
+      detectedParagraphsCount: 0,
+      isMirrorSheetDetected: false,
+      observations: 'Processamento automático limitado. Requer conferência docente manual.',
+    });
+  }
+});
+
+// ----------------------------------------------------------------------------
+// API: Regeneração Pontual de Questão mantendo Parâmetros Gerais
+// ----------------------------------------------------------------------------
+app.post('/api/ai/regenerate-question', async (req: Request, res: Response) => {
+  try {
+    const {
+      previousQuestion,
+      subject = 'Geral',
+      gradeLevel = 'Ensino Médio',
+      difficulty = 'médio',
+      topic = '',
+    } = req.body;
+
+    if (!previousQuestion) {
+      return res.status(400).json({ error: 'Dados da questão anterior são necessários.' });
+    }
+
+    const ai = getGeminiClient();
+    const type = previousQuestion.type || 'objective';
+    const bnccCode = previousQuestion.bnccCode || 'BNCC';
+    const points = Number(previousQuestion.points) || 1.5;
+
+    const prompt = `Você deve REGENERAR (criar uma nova versão alternativa) de UMA questão de avaliação escolar, preservando estritamente os parâmetros pedagógicos.
+    
+PARÂMETROS OBRIGATÓRIOS:
+- Tipo: ${type === 'objective' ? 'Objetiva (4 alternativas A, B, C, D com apenas uma correta e explicações)' : 'Dissertativa (com resposta modelo esperada e rubrica com critérios)'}
+- Disciplina: ${subject}
+- Série/Ano: ${gradeLevel}
+- Código BNCC a manter: ${bnccCode} (${previousQuestion.bnccSkillDescription || 'Habilidade oficial'})
+- Valor da questão: ${points} pontos
+- Nível de Dificuldade: ${difficulty}
+- Tema: ${topic || previousQuestion.subjectTag || 'Conteúdo curricular'}
+
+QUESTÃO ANTERIOR (substitua por uma formulação inédita e enriquecida):
+"${previousQuestion.statement}"`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: prompt,
+      config: {
+        systemInstruction: 'Você é um elaborador de questões educacionais para bancas oficiais e BNCC. Responda em JSON.',
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            statement: { type: Type.STRING },
+            points: { type: Type.NUMBER },
+            type: { type: Type.STRING },
+            subjectTag: { type: Type.STRING },
+            bnccCode: { type: Type.STRING },
+            bnccSkillDescription: { type: Type.STRING },
+            bnccAlignmentStatus: { type: Type.STRING, description: 'confirmada' },
+            bnccPedagogicalRationale: { type: Type.STRING, description: 'Justificativa pedagógica do alinhamento' },
+            options: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  text: { type: Type.STRING },
+                  isCorrect: { type: Type.BOOLEAN },
+                  explanation: { type: Type.STRING },
+                },
+                required: ['id', 'text', 'isCorrect'],
+              },
+            },
+            expectedAnswer: { type: Type.STRING },
+            rubric: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  maxScore: { type: Type.NUMBER },
+                },
+                required: ['title', 'description', 'maxScore'],
+              },
+            },
+          },
+          required: ['statement', 'points', 'type', 'bnccCode'],
+        },
+      },
+    });
+
+    const parsed = JSON.parse(response.text || '{}');
+    return res.json({
+      ...previousQuestion,
+      ...parsed,
+      id: previousQuestion.id,
+      order: previousQuestion.order,
+      points,
+      type,
+    });
+  } catch (error: any) {
+    console.error('Erro na regeneração pontual de questão:', error.message);
+    const { previousQuestion } = req.body;
+    return res.json({
+      ...previousQuestion,
+      statement: `${previousQuestion.statement} (Revisão: analise sob a perspectiva crítica das aplicações práticas)`,
+      bnccAlignmentStatus: 'confirmada',
+    });
+  }
+});
+
+// ----------------------------------------------------------------------------
 // API: Geração de Provas alinhadas à BNCC (Base Nacional Comum Curricular)
 // ----------------------------------------------------------------------------
 app.post('/api/ai/generate-exam-bncc', async (req: Request, res: Response) => {

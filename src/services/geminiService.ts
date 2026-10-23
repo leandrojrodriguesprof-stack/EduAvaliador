@@ -177,6 +177,56 @@ export async function gradeEnemEssay(params: {
   return response.json();
 }
 
+export async function transcribeEssayPhoto(params: {
+  imageBase64: string;
+  knownStudents?: { name: string; registration?: string }[];
+  theme?: string;
+}): Promise<{
+  detectedStudentName: string;
+  detectedRegistration?: string;
+  isConfident: boolean;
+  confidenceScore: number;
+  transcription: string;
+  readability: string;
+  detectedParagraphsCount?: number;
+  isMirrorSheetDetected?: boolean;
+  observations?: string;
+}> {
+  const response = await fetch('/api/ai/transcribe-essay-photo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Erro na transcrição da foto da redação.');
+  }
+
+  return response.json();
+}
+
+export async function regenerateExamQuestion(params: {
+  previousQuestion: Question;
+  subject?: string;
+  gradeLevel?: string;
+  difficulty?: string;
+  topic?: string;
+}): Promise<Question> {
+  const response = await fetch('/api/ai/regenerate-question', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Erro ao regenerar questão com IA.');
+  }
+
+  return response.json();
+}
+
 export async function gradePhotoExam(params: {
   imageBase64: string;
   questions: any[];

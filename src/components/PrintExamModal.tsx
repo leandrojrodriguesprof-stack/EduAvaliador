@@ -44,7 +44,7 @@ export const PrintExamModal: React.FC<PrintExamModalProps> = ({ exam, isOpen, on
                   !showAnswerKey ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Caderno de Questões
+                Versão do Aluno (Sem Gabarito)
               </button>
               <button
                 type="button"
@@ -53,7 +53,7 @@ export const PrintExamModal: React.FC<PrintExamModalProps> = ({ exam, isOpen, on
                   showAnswerKey ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Gabarito Oficial
+                Versão do Professor (Gabarito + BNCC)
               </button>
             </div>
 
@@ -308,6 +308,57 @@ export const PrintExamModal: React.FC<PrintExamModalProps> = ({ exam, isOpen, on
                 );
               })}
             </div>
+
+            {/* Teacher Version: Matriz de Alinhamento e Habilidades BNCC */}
+            {showAnswerKey && (
+              <div className="mt-8 pt-6 border-t-2 border-slate-800 break-inside-avoid">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 font-sans mb-3 flex items-center justify-between">
+                  <span>Matriz de Alinhamento Pedagógico &bull; BNCC / MEC</span>
+                  <span className="text-xs font-normal normal-case text-slate-600">
+                    Documento de prestação de contas pedagógicas
+                  </span>
+                </h3>
+                <div className="overflow-x-auto border border-slate-300 rounded">
+                  <table className="w-full text-left text-xs font-sans">
+                    <thead className="bg-slate-100 border-b border-slate-300 font-bold text-slate-800">
+                      <tr>
+                        <th className="p-2 border-r border-slate-300 w-16">Questão</th>
+                        <th className="p-2 border-r border-slate-300 w-24">Código BNCC</th>
+                        <th className="p-2 border-r border-slate-300">Descrição da Habilidade Avaliada</th>
+                        <th className="p-2 border-r border-slate-300 w-20 text-center">Tipo</th>
+                        <th className="p-2 text-right w-16">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {exam.questions.map((q, idx) => (
+                        <tr key={q.id}>
+                          <td className="p-2 border-r border-slate-200 font-bold text-center">
+                            Q{q.order || idx + 1}
+                          </td>
+                          <td className="p-2 border-r border-slate-200 font-mono font-bold text-indigo-900">
+                            {q.bnccCode || 'BNCC Geral'}
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-slate-700 leading-snug">
+                            {q.bnccSkillDescription || 'Habilidade oficial curricular correspondente.'}
+                            {q.bnccPedagogicalRationale && (
+                              <span className="block text-[10px] text-slate-500 italic mt-0.5">
+                                Justificativa: {q.bnccPedagogicalRationale}
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-center font-medium capitalize">
+                            {q.type === 'objective' ? 'Objetiva' : 'Dissertativa'}
+                          </td>
+                          <td className="p-2 text-right font-bold text-slate-800">
+                            {q.points.toFixed(1)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* Footer with page notation */}
             <div className="text-center pt-4 text-[10px] text-slate-500 font-sans border-t border-slate-200">

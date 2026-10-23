@@ -30,6 +30,7 @@ interface EnemEssayCorrectorProps {
   onSaveEssay: (essay: EnemEssaySubmission) => void;
   onDeleteEssay: (id: string) => void;
   onBackToMenu: () => void;
+  onOpenBatch?: () => void;
 }
 
 export const EnemEssayCorrector: React.FC<EnemEssayCorrectorProps> = ({
@@ -37,6 +38,7 @@ export const EnemEssayCorrector: React.FC<EnemEssayCorrectorProps> = ({
   onSaveEssay,
   onDeleteEssay,
   onBackToMenu,
+  onOpenBatch,
 }) => {
   const [activeEssay, setActiveEssay] = useState<EnemEssaySubmission | null>(null);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -482,17 +484,30 @@ Depreende-se, pois, a urgência de medidas interventivas para garantir a inclus�
       ) : (
         /* LIST OF ALL SUBMITTED ESSAYS */
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h2 className="text-lg font-extrabold text-slate-900">
               Redações Cadastradas ({essays.length})
             </h2>
 
-            <button
-              onClick={() => setIsNewModalOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl shadow-xs"
-            >
-              <Plus className="w-4 h-4" /> Enviar Redação para Correção
-            </button>
+            <div className="flex items-center gap-2">
+              {onOpenBatch && (
+                <button
+                  type="button"
+                  onClick={onOpenBatch}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl shadow-xs transition-colors"
+                >
+                  <Camera className="w-4 h-4 text-indigo-600" />
+                  Correção em Lote por Fotos
+                </button>
+              )}
+
+              <button
+                onClick={() => setIsNewModalOpen(true)}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-xl shadow-xs"
+              >
+                <Plus className="w-4 h-4" /> Enviar Redação Individual
+              </button>
+            </div>
           </div>
 
           {essays.length === 0 ? (

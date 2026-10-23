@@ -6,10 +6,12 @@ import { ExamTaker } from './components/ExamTaker';
 import { SubmissionResults } from './components/SubmissionResults';
 import { TeacherGradingDashboard } from './components/TeacherGradingDashboard';
 import { EnemEssayCorrector } from './components/EnemEssayCorrector';
+import { EssayBatchCorrector } from './components/EssayBatchCorrector';
 import { PhotoBatchCorrector } from './components/PhotoBatchCorrector';
 import { BnccProficiencyDashboard } from './components/BnccProficiencyDashboard';
 import { AiExamGeneratorModal } from './components/AiExamGeneratorModal';
 import { PrintExamModal } from './components/PrintExamModal';
+import { BnccCoverageModal } from './components/BnccCoverageModal';
 import { Exam, ExamSubmission, EnemEssaySubmission } from './types/exam';
 import {
   getStoredExams,
@@ -37,6 +39,7 @@ export default function App() {
   const [printExam, setPrintExam] = useState<Exam | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isBnccCoverageModalOpen, setIsBnccCoverageModalOpen] = useState(false);
   const [dashboardExamFilter, setDashboardExamFilter] = useState<string | undefined>(undefined);
 
   // Load from local storage on mount
@@ -173,6 +176,7 @@ export default function App() {
           }}
           pendingCount={pendingCount}
           onOpenAiModal={() => setIsAiModalOpen(true)}
+          onOpenBnccModal={() => setIsBnccCoverageModalOpen(true)}
           onNewExam={handleNewExam}
           onResetData={handleResetData}
         />
@@ -254,6 +258,18 @@ export default function App() {
             onSaveEssay={handleSaveEssay}
             onDeleteEssay={handleDeleteEssay}
             onBackToMenu={() => setActiveTab('list')}
+            onOpenBatch={() => setActiveTab('essay_batch')}
+          />
+        )}
+
+        {activeTab === 'essay_batch' && (
+          <EssayBatchCorrector
+            onBatchGraded={(newEssays) => {
+              newEssays.forEach((es) => saveEssay(es));
+              refreshData();
+              setActiveTab('enem_essays');
+            }}
+            onBackToMenu={() => setActiveTab('enem_essays')}
           />
         )}
 
@@ -271,6 +287,12 @@ export default function App() {
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
         onExamGenerated={handleExamGenerated}
+      />
+
+      {/* BNCC Catalog and Coverage Audit Modal */}
+      <BnccCoverageModal
+        isOpen={isBnccCoverageModalOpen}
+        onClose={() => setIsBnccCoverageModalOpen(false)}
       />
 
       {/* Print / PDF Modal */}
